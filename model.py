@@ -9,11 +9,14 @@ df = pd.read_csv('AEP_hourly.csv')
 # Convert to datetime and sort
 df['Datetime'] = pd.to_datetime(df['Datetime'])
 df = df.sort_values('Datetime').reset_index(drop=True)
+df = df.drop_duplicates(subset='Datetime').reset_index(drop=True)
 
 print("Enriching data with contextual signals...")
 
 # 1. Time-of-day & Day of week
 df['Hour'] = df['Datetime'].dt.hour
+df['Hour_sin'] = np.sin(2 * np.pi * df['Hour'] / 24)
+df['Hour_cos'] = np.cos(2 * np.pi * df['Hour'] / 24)
 df['DayOfWeek'] = df['Datetime'].dt.dayofweek
 df['Month'] = df['Datetime'].dt.month
 
@@ -32,7 +35,9 @@ def generate_temp(month):
     else:                     # Fall (Mild)
         return np.random.normal(18, 5)
 
-df['Temperature_C'] = df['Month'].apply(generate_temp).round(1)
+np.random.seed(42)
+daily_temps = df.groupby(df['Datetime'].dt.date)['Month'].first().apply(generate_temp)
+df['Temperature_C'] = df['Datetime'].dt.date.map(daily_temps).round(1)
 
 # Rename for clarity
 df = df.rename(columns={'AEP_MW': 'Megawatts'})

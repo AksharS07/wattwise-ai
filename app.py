@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import json
 
@@ -18,7 +18,10 @@ def get_forecast():
 @app.route('/', methods=['GET'])
 def home():
     return "API is running! The data is located at /api/forecast"
+@app.route('/dashboard')
+def dashboard():
+    return send_from_directory('.', 'dashboard.html')
 
 if __name__ == '__main__':
     print("🚀 API is running! Tell the frontend team to fetch from http://127.0.0.1:5000/api/forecast")
-    app.run(port=5000, debug=True)
+    app.run(host='0.0.0.0',port=5000, debug=True)
