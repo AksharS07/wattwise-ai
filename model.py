@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import holidays
-
+import json
 print("Loading dataset...")
 # Load the data
 df = pd.read_csv('AEP_hourly.csv')
@@ -40,7 +40,7 @@ df = df.rename(columns={'AEP_MW': 'Megawatts'})
 print("--------------------------------------------------")
 print("SUCCESS: Dataset is fully enriched and ready for AI!")
 print("--------------------------------------------------")
-# Print the first 10 rows so you can see your masterpiece
+
 print(df[['Datetime', 'Megawatts', 'Hour', 'DayOfWeek', 'Is_Holiday', 'Temperature_C']].head(10))
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
@@ -78,17 +78,11 @@ print(f"🥇 AI MODEL RESULTS:")
 print(f"MAPE Score: {mape:.2f}% (Average error percentage)")
 print(f"RMSE Score: {rmse:.2f} Megawatts")
 print("--------------------------------------------------")
-import json # Make sure this is at the very top of your file with your other imports!
-
-# ... (Keep all your existing AI training code above this) ...
-
 print("Exporting results for the frontend API...")
-
 # We slice the last 48 hours of data so the frontend has a clean 2-day graph to plot
 # .tolist() converts the pandas/numpy arrays into standard Python lists
 last_48_actual = y_test.iloc[-48:].tolist()
 last_48_predicted = predictions[-48:].tolist()
-
 # Package it exactly how the frontend needs it
 output_data = {
     "mape_score": round(mape, 2),
@@ -96,7 +90,6 @@ output_data = {
     "actual_demand": last_48_actual,
     "predicted_demand": [round(num, 2) for num in last_48_predicted]
 }
-
 # Save it to a file
 with open('api_data.json', 'w') as f:
     json.dump(output_data, f)
