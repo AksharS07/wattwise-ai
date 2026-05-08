@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Grid Forecast Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0f0d;
+    --surface: #111a15;
+    --surface2: #172010;
+    --border: rgba(0,255,120,0.12);
+    --green: #00ff78;
+    --green-dim: rgba(0,255,120,0.15);
+    --amber: #ffb830;
+    --red: #ff4d6d;
+    --text: #e8f5ee;
+    --muted: #6b8c78;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-block h1 {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .logo-block p {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: var(--mono);
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 999px;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent, var(--green));
+    opacity: 0.6;
+  }
+
+  .metric-card.amber { --accent: var(--amber); }
+  .metric-card.red-accent { --accent: var(--red); }
+
+  .metric-label {
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+  }
+
+  .metric-value {
+    font-size: 2rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .metric-value span {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  .metric-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-title {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .legend-line {
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+  }
+
+  .legend-line.dashed {
+    background: repeating-linear-gradient(90deg, var(--green) 0, var(--green) 4px, transparent 4px, transparent 8px);
+  }
+
+  canvas { width: 100% !important; }
+
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .analysis-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .analysis-card h3 {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+  }
+
+  .struggle-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+
+  .struggle-item:last-child { border-bottom: none; }
+
+  .struggle-tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tag-high { background: rgba(255,77,109,0.15); color: var(--red); }
+  .tag-med { background: rgba(255,184,48,0.15); color: var(--amber); }
+
+  .feature-bar-wrap { }
+
+  .feature-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+  }
+
+  .feat-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    width: 100px;
+    flex-shrink: 0;
+  }
+
+  .feat-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .feat-bar {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--green);
+    transition: width 1s ease;
+  }
+
+  .feat-pct {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .error-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 640px) {
+    .bottom-row { grid-template-columns: 1fr; }
+    body { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-block">
+    <h1>⚡ Smart Grid AI</h1>
+    <p>Electricity Demand Forecasting · AEP Dataset</p>
+  </div>
+  <div class="status-pill">
+    <span class="dot"></span>
+    Model Online
+  </div>
+</header>
+
+<div class="metrics-row">
+  <div class="metric-card">
+    <div class="metric-label">MAPE Score</div>
+    <div class="metric-value" id="mape-val">—<span>%</span></div>
+    <div class="metric-sub">Mean avg. percentage error</div>
+  </div>
+  <div class="metric-card amber">
+    <div class="metric-label">RMSE Score</div>
+    <div class="metric-value" id="rmse-val">—<span>MW</span></div>
+    <div class="metric-sub">Root mean squared error</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Forecast Window</div>
+    <div class="metric-value">48<span>hrs</span></div>
+    <div class="metric-sub">2-day next-day forecast</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Resolution</div>
+    <div class="metric-value">1<span>hr</span></div>
+    <div class="metric-sub">Hourly granularity</div>
+  </div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-header">
+    <div class="chart-title">Predicted vs Actual Demand — 48hr Test Window</div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-line" style="background: #ff4d6d;"></div>
+        Actual
+      </div>
+      <div class="legend-item">
+        <div class="legend-line dashed"></div>
+        Predicted
+      </div>
+    </div>
+  </div>
+  <canvas id="gridChart" height="320"></canvas>
+</div>
+
+<div class="bottom-row">
+  <div class="analysis-card">
+    <h3>When the model struggles</h3>
+    <div class="struggle-item">
+      <span class="struggle-tag tag-high">High Error</span>
+      <span style="color: #b0c8b8;">Summer peak demand spikes — heatwave-driven surges are rare in training data</span>
+    </div>
+    <div class="struggle-item">
+      <span class="struggle-tag tag-med">Medium</span>
+      <span style="color: #b0c8b8;">Holiday anomalies — demand drops sharply on holidays, low signal</span>
+    </div>
+    <div class="struggle-item">
+      <span class="struggle-tag tag-med">Medium</span>
+      <span style="color: #b0c8b8;">Weekend transitions — Friday evening drop-off is inconsistent by season</span>
+    </div>
+  </div>
+
+  <div class="analysis-card">
+    <h3>Feature importance</h3>
+    <div class="feature-bar-wrap" id="feat-bars">
+      <div class="feature-row">
+        <div class="feat-label">Hour (cyclic)</div>
+        <div class="feat-bar-bg"><div class="feat-bar" style="width: 35%;"></div></div>
+        <div class="feat-pct">35%</div>
+      </div>
+      <div class="feature-row">
+        <div class="feat-label">Temperature</div>
+        <div class="feat-bar-bg"><div class="feat-bar" style="width: 27%;"></div></div>
+        <div class="feat-pct">27%</div>
+      </div>
+      <div class="feature-row">
+        <div class="feat-label">Month</div>
+        <div class="feat-bar-bg"><div class="feat-bar" style="width: 25%;"></div></div>
+        <div class="feat-pct">25%</div>
+      </div>
+      <div class="feature-row">
+        <div class="feat-label">Day of week</div>
+        <div class="feat-bar-bg"><div class="feat-bar" style="width: 13%;"></div></div>
+        <div class="feat-pct">13%</div>
+      </div>
+      <div class="feature-row">
+        <div class="feat-label">Holiday</div>
+        <div class="feat-bar-bg"><div class="feat-bar" style="width: 1%;"></div></div>
+        <div class="feat-pct">~0%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function buildDashboard() {
+  try {
+    const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://127.0.0.1:5000'
+  : `http://${window.location.hostname}:5000`;
+const response = await fetch('http://10.72.227.201:5000/api/forecast');
+    const data = await response.json();
+
+    document.getElementById('mape-val').innerHTML = `${data.mape_score}<span>%</span>`;
+    document.getElementById('rmse-val').innerHTML = `${data.rmse_score.toLocaleString()}<span>MW</span>`;
+
+    const labels = Array.from({length: 48}, (_, i) => {
+      const day = i < 24 ? 'Day 1' : 'Day 2';
+      const hr = i % 24;
+      return `${day} ${hr.toString().padStart(2,'0')}:00`;
+    });
+
+    const ctx = document.getElementById('gridChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Actual Demand (MW)',
+            data: data.actual_demand,
+            borderColor: '#ff4d6d',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: false
+          },
+          {
+            label: 'AI Predicted Demand (MW)',
+            data: data.predicted_demand,
+            borderColor: '#00ff78',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            tension: 0.3,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111a15',
+            borderColor: 'rgba(0,255,120,0.2)',
+            borderWidth: 1,
+            titleColor: '#6b8c78',
+            bodyColor: '#e8f5ee',
+            titleFont: { family: 'Space Mono', size: 11 },
+            bodyFont: { family: 'Space Mono', size: 12 },
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label.split(' ')[0]}: ${Math.round(ctx.parsed.y).toLocaleString()} MW`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(0,255,120,0.05)' },
+            ticks: {
+              color: '#6b8c78',
+              font: { family: 'Space Mono', size: 9 },
+              maxTicksLimit: 12,
+              maxRotation: 0
+            },
+            border: { color: 'rgba(0,255,120,0.1)' }
+          },
+          y: {
+            grid: { color: 'rgba(0,255,120,0.05)' },
+            ticks: {
+              color: '#6b8c78',
+              font: { family: 'Space Mono', size: 10 },
+              callback: v => `${(v/1000).toFixed(0)}k`
+            },
+            border: { color: 'rgba(0,255,120,0.1)' }
+          }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    document.querySelector('.chart-card').innerHTML =
+      `<div class="error-state">⚠ Backend offline — run model.py then app.py first</div>`;
+    document.getElementById('mape-val').textContent = '—';
+    document.getElementById('rmse-val').textContent = '—';
+  }
+}
+
+buildDashboard();
+</script>
+</body>
+</html>
