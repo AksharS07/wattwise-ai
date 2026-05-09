@@ -1,9 +1,13 @@
 #Electricity Demand Forecasting for Smart Grid 
-import pandas as pd
-import numpy as np
+import pandas as pd #CSV to dataframe
+import numpy as np #For trignometric functions 
 import holidays
 import json
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+df = pd.read_csv(os.path.join(BASE_DIR, 'AEP_hourly.csv'))
 print("Loading dataset...")
+
 
 # Load the data
 df = pd.read_csv('AEP_hourly.csv')
@@ -36,12 +40,12 @@ def generate_temp(month):
         return np.random.normal(28, 4)
     else:                     # Fall (Mild)
         return np.random.normal(18, 5)
-
+#PRNG
 np.random.seed(42)
 daily_temps = df.groupby(df['Datetime'].dt.date)['Month'].first().apply(generate_temp)
 df['Temperature_C'] = df['Datetime'].dt.date.map(daily_temps).round(1)
 
-# Rename for clarity
+# Renaming for clarity
 df = df.rename(columns={'AEP_MW': 'Megawatts'})
 
 print("--------------------------------------------------")
@@ -81,7 +85,7 @@ mape = mean_absolute_percentage_error(y_test, predictions) * 100
 rmse = np.sqrt(mean_squared_error(y_test, predictions))
 
 print("--------------------------------------------------")
-print(f"🥇 AI MODEL RESULTS:")
+print(f" AI MODEL RESULTS:")
 print(f"MAPE Score: {mape:.2f}% (Average error percentage)")
 print(f"RMSE Score: {rmse:.2f} Megawatts")
 print("--------------------------------------------------")
