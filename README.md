@@ -1,6 +1,7 @@
 # ⚡ WattWise AI: Predictive Grid Dashboard
 
 An AI-driven predictive digital twin for electrical grids. This decoupled machine learning microservice uses a Random Forest Regressor to forecast energy demand 48 hours in advance, allowing grid operators to proactively balance load, minimize Peaker Plant usage, and prevent blackouts.
+> **Project Origin:** This architecture was originally prototyped by Team Hackorbit during the **Fusion Techathon 4.0** (Alva's Institute of Engineering and Technology). It was built to solve the "Electricity Demand Forecasting for Smart Grids" problem statement under a strict time constraint of 24hrs.
 
 ## 🚀 System Architecture
 * **Backend Intelligence:** Scikit-Learn (Random Forest, 50 Estimators)
