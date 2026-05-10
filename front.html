@@ -396,10 +396,10 @@
 <script>
 async function buildDashboard() {
   try {
-    const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://127.0.0.1:5000'
+    const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === ' 127.0.0.1:5000'
+  ? 'http:// 127.0.0.1:5000'
   : `http://${window.location.hostname}:5000`;
-const response = await fetch('http://10.72.227.201:5000/api/forecast');
+const response = await fetch('http://127.0.0.1:5000/api/forecast');
     const data = await response.json();
 
     document.getElementById('mape-val').innerHTML = `${data.mape_score}<span>%</span>`;
